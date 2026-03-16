@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <title>Redoxtræning – hvem oxideres og reduceres?</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 900px;
+      margin: 20px auto;
+      line-height: 1.5;
+      padding: 20px;
+      background: radial-gradient(circle at top left, #b3e5fc, #e1bee7, #fff9c4);
+      background-attachment: fixed;
+      backdrop-filter: blur(3px);
+      position: relative;
+    }
+
+    h1 {
+      text-align: center;
+      color: #4a148c;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .equation {
+      font-size: 1.2em;
+      margin: 15px 0;
+      padding: 10px;
+      background: rgba(255,255,255,0.8);
+      border-left: 5px solid #7e57c2;
+      border-radius: 6px;
+    }
+
+    input[type="number"] {
+      width: 50px;
+      text-align: center;
+      margin: 0 3px;
+      border: 2px solid #7e57c2;
+      border-radius: 4px;
+    }
+
+    select {
+      margin: 0 5px;
+      padding: 4px;
+      border-radius: 4px;
+      border: 2px solid #4a148c;
+      background: #f3e5f5;
+    }
+
+    .controls {
+      margin-top: 15px;
+    }
+
+    button {
+      padding: 10px 16px;
+      margin-right: 10px;
+      cursor: pointer;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      color: white;
+      background: linear-gradient(135deg, #7e57c2, #5e35b1);
+      transition: transform 0.15s ease, background 0.3s ease;
+    }
+
+    button:hover {
+      transform: scale(1.05);
+      background: linear-gradient(135deg, #9575cd, #7e57c2);
+    }
+
+    #feedback {
+      margin-top: 15px;
+      font-weight: bold;
+      font-size: 1.2em;
+      color: #4a148c;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.15);
+    }
+
+    /* Store, farvede kemi-symboler uden for opgaveområdet */
+    body::before {
+      content: "⚗️";
+      font-size: 240px;
+      position: fixed;
+      top: 40px;
+      left: -60px;
+      z-index: -1;
+      color: #7e57c2;
+      pointer-events: none;
+    }
+
+    body::after {
+      content: "🧪";
+      font-size: 280px;
+      position: fixed;
+      bottom: 40px;
+      right: -60px;
+      z-index: -1;
+      color: #ff7043;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Redoxtræning</h1>
+  <p>
+    For hver opgave skal du:
+  </p>
+  <ul>
+    <li>Indsætte koefficienter, så reaktionsskemaet bliver afstemt.</li>
+    <li>Vælge hvilket stof der <strong>oxideres</strong>, og hvilket der <strong>reduceres</strong>.</li>
+  </ul>
+
+  <p><strong>Opgave <span id="taskNumber">1</span> af 10</strong></p>
+
+  <div class="equation" id="equationContainer"></div>
+
+  <div>
+    Oxideres:
+    <select id="oxidizedSelect"></select>
+    Reduceres:
+    <select id="reducedSelect"></select>
+  </div>
+
+  <div class="controls">
+    <button id="checkBtn">Tjek svar</button>
+    <button id="nextBtn" disabled>Næste opgave</button>
+  </div>
+
+  <div id="feedback"></div>
+
+  <script>
+    const tasks = [
+      {
+        species: ["Zn", "Cu²⁺", "Zn²⁺", "Cu"],
+        coeffs: [1, 1, 1, 1],
+        oxidized: "Zn",
+        reduced: "Cu²⁺"
+      },
+      {
+        species: ["Fe²⁺", "Cl₂", "Fe³⁺", "Cl⁻"],
+        coeffs: [2, 1, 2, 2],
+        oxidized: "Fe²⁺",
+        reduced: "Cl₂"
+      },
+      {
+        species: ["Cu", "Ag⁺", "Cu²⁺", "Ag"],
+        coeffs: [1, 2, 1, 2],
+        oxidized: "Cu",
+        reduced: "Ag⁺"
+      },
+      {
+        species: ["Fe²⁺", "Sn⁴⁺", "Fe³⁺", "Sn²⁺"],
+        coeffs: [2, 1, 2, 1],
+        oxidized: "Fe²⁺",
+        reduced: "Sn⁴⁺"
+      },
+      {
+        species: ["I⁻", "Cl₂", "I₂", "Cl⁻"],
+        coeffs: [2, 1, 1, 2],
+        oxidized: "I⁻",
+        reduced: "Cl₂"
+      },
+      {
+        species: ["Zn", "H⁺", "Zn²⁺", "H₂"],
+        coeffs: [1, 2, 1, 1],
+        oxidized: "Zn",
+        reduced: "H⁺"
+      },
+      {
+        species: ["Br⁻", "Cl₂", "Br₂", "Cl⁻"],
+        coeffs: [2, 1, 1, 2],
+        oxidized: "Br⁻",
+        reduced: "Cl₂"
+      },
+      {
+        species: ["Fe", "Cu²⁺", "Fe²⁺", "Cu"],
+        coeffs: [1, 1, 1, 1],
+        oxidized: "Fe",
+        reduced: "Cu²⁺"
+      },
+      {
+        species: ["Sn²⁺", "Fe³⁺", "Sn⁴⁺", "Fe²⁺"],
+        coeffs: [1, 2, 1, 2],
+        oxidized: "Sn²⁺",
+        reduced: "Fe³⁺"
+      },
+      {
+        species: ["Al", "Cu²⁺", "Al³⁺", "Cu"],
+        coeffs: [2, 3, 2, 3],
+        oxidized: "Al",
+        reduced: "Cu²⁺"
+      }
+    ];
+
+    const coolPeople = [
+      "Spider-Man",
+      "Taylor Swift",
+      "Messi",
+      "Beyoncé",
+      "Albert Einstein",
+      "Rihanna",
+      "Zendaya",
+      "Keanu Reeves",
+      "Greta Thunberg",
+      "Simone Biles",
+      "Billie Eilish",
+      "Nikola Tesla",
+      "Ariana Grande",
+      "Michael Jordan",
+      "Marie Curie",
+      "Usain Bolt",
+      "Lady Gaga",
+      "The Rock",
+      "Emma Watson",
+      "Snoop Dogg",
+      "Serena Williams",
+      "David Attenborough",
+      "Shakira",
+      "Leonardo da Vinci",
+      "Megan Thee Stallion",
+      "Stephen Hawking",
+      "Post Malone",
+      "Frida Kahlo",
+      "Niels Bohr"
+    ];
+
+    let currentTaskIndex = 0;
+
+    const equationContainer = document.getElementById("equationContainer");
+    const oxidizedSelect = document.getElementById("oxidizedSelect");
+    const reducedSelect = document.getElementById("reducedSelect");
+    const feedback = document.getElementById("feedback");
+    const taskNumberSpan = document.getElementById("taskNumber");
+    const checkBtn = document.getElementById("checkBtn");
+    const nextBtn = document.getElementById("nextBtn");
+
+    function shuffle(array) {
+      return array.sort(() => Math.random() - 0.5);
+    }
+
+    function renderTask() {
+      const task = tasks[currentTaskIndex];
+      taskNumberSpan.textContent = currentTaskIndex + 1;
+
+      const leftSpecies = shuffle([task.species[0], task.species[1]]);
+      const rightSpecies = shuffle([task.species[2], task.species[3]]);
+
+      equationContainer.innerHTML = `
+        <span>
+          <input type="number" class="coef-input" data-species="${leftSpecies[0]}" min="1"> ${leftSpecies[0]} +
+          <input type="number" class="coef-input" data-species="${leftSpecies[1]}" min="1"> ${leftSpecies[1]} →
+          <input type="number" class="coef-input" data-species="${rightSpecies[0]}" min="1"> ${rightSpecies[0]} +
+          <input type="number" class="coef-input" data-species="${rightSpecies[1]}" min="1"> ${rightSpecies[1]}
+        </span>
+      `;
+
+      oxidizedSelect.innerHTML = `<option value="" disabled selected>Vælg hvad der oxideres</option>`;
+      reducedSelect.innerHTML = `<option value="" disabled selected>Vælg hvad der reduceres</option>`;
+
+      task.species.forEach(sp => {
+        const opt1 = document.createElement("option");
+        opt1.value = sp;
+        opt1.textContent = sp;
+        oxidizedSelect.appendChild(opt1);
+
+        const opt2 = document.createElement("option");
+        opt2.value = sp;
+        opt2.textContent = sp;
+        reducedSelect.appendChild(opt2);
+      });
+
+      feedback.textContent = "";
+      nextBtn.disabled = true;
+    }
+
+    function checkAnswer() {
+      const task = tasks[currentTaskIndex];
+
+      const inputs = document.querySelectorAll(".coef-input");
+      let coeffsCorrect = true;
+
+      inputs.forEach(input => {
+        const sp = input.dataset.species;
+        const val = parseInt(input.value, 10);
+        const idx = task.species.indexOf(sp);
+        if (isNaN(val) || idx === -1 || val !== task.coeffs[idx]) {
+          coeffsCorrect = false;
+        }
+      });
+
+      const oxChoice = oxidizedSelect.value;
+      const redChoice = reducedSelect.value;
+
+      const redoxCorrect =
+        oxChoice === task.oxidized &&
+        redChoice === task.reduced;
+
+      if (coeffsCorrect && redoxCorrect) {
+        const randomName = coolPeople[Math.floor(Math.random() * coolPeople.length)];
+        feedback.textContent = `Vildt sejt! Du har jo rizz som ${randomName}.`;
+        nextBtn.disabled = false;
+      } else {
+        feedback.textContent = "Ikke helt endnu – tjek både koefficienter og hvem der oxideres/reduceres.";
+      }
+    }
+
+    function nextTask() {
+      if (currentTaskIndex < tasks.length - 1) {
+        currentTaskIndex++;
+        renderTask();
+      } else {
+        feedback.textContent = "Du har gennemført alle 10 opgaver – stærkt arbejde!";
+        nextBtn.disabled = true;
+        checkBtn.disabled = true;
+      }
+    }
+
+    checkBtn.addEventListener("click", checkAnswer);
+    nextBtn.addEventListener("click", nextTask);
+
+    renderTask();
+  </script>
+</body>
+</html>
